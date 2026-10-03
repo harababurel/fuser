@@ -17,12 +17,10 @@ fn main() {
         if cfg!(feature = "macos-no-mount") {
             println!("cargo::rustc-cfg=fuser_mount_impl=\"macos-no-mount\"");
         } else {
-            pkg_config::Config::new()
-                .atleast_version("2.6.0")
-                .probe("fuse") // for macFUSE 4.x
-                .map_err(|e| eprintln!("{e}"))
-                .unwrap();
-            println!("cargo::rustc-cfg=fuser_mount_impl=\"libfuse2\"");
+            // macFUSE 5.3+ makes libfuse2's fuse_mount_compat25() always fail on macOS, so
+            // mount through libfuse3, which macFUSE also ships.
+            // See https://github.com/cberner/fuser/issues/752
+            configure_libfuse3().map_err(|e| eprintln!("{e}")).unwrap();
             println!("cargo::rustc-cfg=feature=\"macfuse-4-compat\"");
         }
     } else if cfg!(feature = "libfuse3") {
